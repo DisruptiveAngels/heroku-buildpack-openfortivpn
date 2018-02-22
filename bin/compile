@@ -1,0 +1,50 @@
+#!/bin/bash
+
+indent() {
+  sed -u 's/^/       /'
+}
+
+echo "-----> Install OpenFortiVPN"
+
+BUILD_DIR=$1
+CACHE_DIR=$2
+VENDOR_DIR="$BUILD_DIR/vendor"
+mkdir -p $VENDOR_DIR
+INSTALL_DIR="$VENDOR_DIR/openfortivpn"
+mkdir -p $INSTALL_DIR
+OPENFORTIVPN_VERSION="${OPENFORTIVPN_VERSION:-1.6.0}"
+
+# install openfortivpn
+OPENFORTIVPN_FILE="v$OPENFORTIVPN_VERSION.tar.gz"
+OPENFORTIVPN_DIR="openfortivpn-$OPENFORTIVPN_VERSION"
+# SSL cert used on openfortivpn not recognized by heroku.
+OPENFORTIVPN_URL="https://github.com/adrienverge/openfortivpn/archive/$OPENFORTIVPN_FILE"
+
+echo "-----> Downloading OpenFortiVPN from $OPENFORTIVPN_URL"
+wget $OPENFORTIVPN_URL -P $BUILD_DIR | indent
+
+echo "-----> Extracting OpenFortiVPN from $BUILD_DIR/$OPENFORTIVPN_FILE"
+if [ ! -f $BUILD_DIR/$OPENFORTIVPN_FILE ]; then
+  echo "Error: Unable to download OpenFortiVPN" | indent
+  ls $BUILD_DIR | indent
+  exit 1;
+fi
+tar xvzf $BUILD_DIR/$OPENFORTIVPN_FILE | indent
+
+echo "-----> Building OpenFortiVPN"
+cd $OPENFORTIVPN_DIR
+export CPPFLAGS="-I$INSTALL_DIR/include"
+export LDFLAGS="-L$INSTALL_DIR/lib"
+./autogen.sh
+./configure --prefix=$INSTALL_DIR
+make && make install
+cd ..
+rm -rf $OPENFORTIVPN_DIR
+
+# update PATH and LD_LIBRARY_PATH
+echo "-----> Updating environment variables"
+PROFILE_PATH="$BUILD_DIR/.profile.d/openfortivpn.sh"
+ACTUAL_INSTALL_PATH="$HOME/vendor/openfortivpn"
+mkdir -p $(dirname $PROFILE_PATH)
+echo "export PATH=$ACTUAL_INSTALL_PATH/bin:\$PATH" >> $PROFILE_PATH
+echo "export LD_LIBRARY_PATH=$ACTUAL_INSTALL_PATH/lib:\$LD_LIBRARY_PATH" >> $PROFILE_PATH
