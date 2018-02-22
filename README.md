@@ -1,3 +1,7 @@
+# Doesn't work leaving this here for future reference.
+It's not possible to initiate a VPN connection in heroku.
+https://stackoverflow.com/questions/13314057/connecting-to-server-behind-vpn-with-heroku-and-ruby
+
 # heroku-buildpack-openfortivpn
 
 A Heroku buildpack for [openfortivpn](https://github.com/adrienverge/openfortivpn).
